@@ -87,6 +87,8 @@
 			clock-names = "ref_clk";
 		};
 	};
+//gpio keys are set in NX512J/msm8939-mtp-keys.dtsi
+/*
 	gpio_keys {
 		compatible = "gpio-keys";
 		input-name = "gpio-keys";
@@ -121,9 +123,11 @@
 			debounce-interval = <15>;
 		};
 	};
-
-	i2c@78b6000 { /* BLSP1 QUP2 */
-		mpu6050@68 { /* Gyroscope and accelerometer sensor combo */
+*/
+// ambient light and proximity are set in NX512J/msm8939-mtp-sensor.dtsi
+/*
+	i2c@78b6000 { // BLSP1 QUP2
+		mpu6050@68 { // Gyroscope and accelerometer sensor combo
 			compatible = "invn,mpu6050";
 			reg = <0x68>;
 			pinctrl-names = "mpu_default","mpu_sleep";
@@ -138,7 +142,7 @@
 			invn,place = "Portrait Down Back Side";
 		};
 
-		avago@39 { /* Ambient light and proximity sensor */
+		avago@39 { // Ambient light and proximity sensor
 			compatible = "avago,apds9900";
 			reg = <0x39>;
 			pinctrl-names = "default","sleep";
@@ -174,6 +178,7 @@
 		};
 
 	};
+*/
 };
 
 &blsp1_uart2 {
@@ -399,12 +404,13 @@
 		qcom,src-sel = <2>; /* QPNP_PIN_SEL_FUNC_1 */
 		qcom,master-en = <1>;
 	};
-
+//set for audio: -> internal codec in NX512J/
+#if 0	
 	gpio@c200 { /* GPIO 3 */
 		/* External regulator control for WTR */
 		status = "disabled";
 	};
-
+#endif	
 	gpio@c300 { /* GPIO 4 */
 		/* External regulator control for APC */
 		status = "disabled";

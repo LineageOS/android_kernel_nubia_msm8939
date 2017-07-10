@@ -259,6 +259,25 @@
 			};
 		};
 
+		// nx512j add
+		// add i2c qup3 (gpio10 gpio11)
+		pmx_i2c_3 {
+			qcom,pins = <&gp 10>, <&gp 11>; /* SDA, SCL */
+			qcom,num-grp-pins = <2>;
+			qcom,pin-func = <2>;
+			label = "pmx_i2c_3";
+
+			i2c_3_active: i2c_3_active {
+				drive-strength = <2>;
+				bias-disable;
+			};
+
+			i2c_3_sleep: i2c_3_sleep {
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+		// nx512j add
 		pmx_i2c_4 {
 			qcom,pins = <&gp 14>, <&gp 15>; /* SDA, SCL */
 			qcom,num-grp-pins = <2>;
@@ -448,11 +467,11 @@
 			        bias-pull-up; /* PULL UP */
 			};
 		};
-
+// nx512j add use qcom key config as nubia default key config
 		tlmm_gpio_key {
-			qcom,pins = <&gp 107>, <&gp 108>, <&gp 109>;
+			qcom,pins = <&gp 107>, <&gp 108>;
 			qcom,pin-func = <0>;
-			qcom,num-grp-pins = <3>;
+			qcom,num-grp-pins = <2>;
 			label = "tlmm_gpio_key";
 			gpio_key_active: gpio_key_active {
 				drive-strength = <2>;
@@ -463,6 +482,7 @@
 				bias-pull-up;
 			};
 		};
+// nx512j add
 
 		/* add pingrp for touchscreen */
 		pmx_ts_int_active {
@@ -1009,7 +1029,8 @@
 				bias-pull-down; /* PULL DOWN */
 			};
 		};
-
+/*nx512j add*/
+#if 0
 		cam_sensor_rear {
 			/* RESET, STANDBY */
 			qcom,pins =  <&gp 35>, <&gp 34>;
@@ -1079,6 +1100,8 @@
 				bias-pull-down = <0>; /* PULL DOWN */
 			};
 		};
+#endif
+/*nx512j add*/
 
 		/* CoreSight */
 		tpiu_seta_1 {
@@ -1500,5 +1523,90 @@
 				bias-pull-down;
 			};
 		};
+// touchscreen cypress and gt1x		
+		gt1x_int_pin {
+			qcom,pins = <&gp 13>;
+			qcom,num-grp-pins = <1>;
+			qcom,pin-func = <0>;
+			label = "gt1x_int_pin";
+			/*active state*/
+			gt1x_int_active: gt1x_int_active {
+				drive-strength = <2>;/*2MA*/
+				bias-disable;
+			};
+			/*suspended state*/
+			gt1x_int_suspend: gt1x_int_suspend {
+				drive-strength = <2>;/*2MA*/
+				bias-disable;
+			};
+		};
+
+		gt1x_rst_pin {
+			qcom,pins = <&gp 12>;
+			qcom,num-grp-pins = <1>;
+			qcom,pin-func = <0>;
+			label = "gt1x_rst_pin";
+
+			gt1x_rst_active: gt1x_rst_active {
+				drive-strength = <10>;
+				bias-pull-up;
+			};
+
+			gt1x_rst_suspend: gt1x_rst_suspend {
+				drive-strength = <2>;
+				bias-high-impedance;
+			};
+		};
+
+		cyttsp5_irq_pin {
+			qcom,pins = <&gp 13>;
+			qcom,num-grp-pins = <1>;
+			qcom,pin-func = <0>;
+			label = "cyttsp5_irq_pin";
+
+			cyttsp5_irq_active: cyttsp5_irq_active {
+				drive-strength = <10>;
+				bias-pull-up;
+			};
+
+			cyttsp5_irq_suspend: cyttsp5_irq_suspend {
+				drive-strength = <2>;
+				bias-pull-up;
+			};
+		};
+		cyttsp5_rst_pin {
+			qcom,pins = <&gp 12>;
+			qcom,num-grp-pins = <1>;
+			qcom,pin-func = <0>;
+			label = "cyttsp5_rst_pin";
+
+			cyttsp5_rst_active: cyttsp5_rst_active {
+				drive-strength = <10>;
+				bias-pull-up;
+			};
+
+			cyttsp5_rst_suspend: cyttsp5_rst_suspend {
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+        // CONFIG_ZTEMT_BQ27520_BATTERY
+	    bq27520_battery_pin {
+			qcom,pins = <&gp 51>, <&gp 114>;
+			qcom,num-grp-pins = <2>;
+			qcom,pin-func = <0>;
+			label = "bq27520_int_gpio";
+			/* active state */
+			bq27520_int_default: default {
+				drive-strength = <2>; /* 2 MA */
+				bias-pull-up;		/* PULL UP*/
+			};
+			/*suspended state */
+			bq27520_int_sleep: sleep {
+				drive-strength = <2>; /* 2 MA */
+				bias-disable = <0>; /* No PULL */
+			};
+	    };
 	};
 };
