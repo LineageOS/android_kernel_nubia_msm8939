@@ -1,4 +1,4 @@
-/* Copyright (c) 2014, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2015, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1801,7 +1801,6 @@ static int msm8x16_wcd_codec_enable_adc(struct snd_soc_dapm_widget *w,
 	struct snd_kcontrol *kcontrol, int event)
 {
 	struct snd_soc_codec *codec = w->codec;
-	struct msm8x16_wcd_priv *msm8x16_wcd = snd_soc_codec_get_drvdata(codec);
 	u16 adc_reg;
 	u8 init_bit_shift;
 
@@ -1822,9 +1821,6 @@ static int msm8x16_wcd_codec_enable_adc(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		if (get_codec_version(msm8x16_wcd) != TOMBAK_1_0)
-			snd_soc_update_bits(codec,
-			MSM8X16_WCD_A_ANALOG_TX_1_2_OPAMP_BIAS, 0x07, 0x04);
 		msm8x16_wcd_codec_enable_adc_block(codec, 1);
 		if (w->reg == MSM8X16_WCD_A_ANALOG_TX_2_EN)
 			snd_soc_update_bits(codec,
@@ -1952,27 +1948,6 @@ static int msm8x16_wcd_codec_enable_spk_pa(struct snd_soc_dapm_widget *w,
 				MSM8X16_WCD_A_ANALOG_RX_EAR_CTL, 0x01, 0x00);
 		snd_soc_update_bits(codec,
 			MSM8X16_WCD_A_DIGITAL_CDC_ANA_CLK_CTL, 0x10, 0x00);
-		break;
-	}
-	return 0;
-}
-
-static int msm8x16_wcd_tx_disable_pdm_clk(struct snd_soc_dapm_widget *w,
-				struct snd_kcontrol *kcontrol, int event)
-{
-	struct snd_soc_codec *codec = w->codec;
-	struct msm8916_asoc_mach_data *pdata = NULL;
-
-	pdata = snd_soc_card_get_drvdata(codec->card);
-
-	dev_dbg(w->codec->dev, "%s event %d w->name %s\n", __func__,
-			event, w->name);
-	switch (event) {
-	case SND_SOC_DAPM_POST_PMD:
-		if (atomic_read(&pdata->mclk_rsc_ref) == 0)
-			snd_soc_update_bits(codec,
-				MSM8X16_WCD_A_CDC_CLK_PDM_CTL,
-				0x03, 0x00);
 		break;
 	}
 	return 0;
@@ -3519,7 +3494,7 @@ static const struct snd_soc_dapm_widget msm8x16_wcd_dapm_widgets[] = {
 		MSM8X16_WCD_A_CDC_CLK_RX_I2S_CTL,	4, 0, NULL, 0),
 	SND_SOC_DAPM_SUPPLY("TX_I2S_CLK",
 		MSM8X16_WCD_A_CDC_CLK_TX_I2S_CTL, 4, 0,
-		msm8x16_wcd_tx_disable_pdm_clk, SND_SOC_DAPM_POST_PMD),
+		NULL, 0),
 };
 
 static const struct msm8x16_wcd_reg_mask_val msm8x16_wcd_reg_defaults[] = {
@@ -3531,7 +3506,7 @@ static const struct msm8x16_wcd_reg_mask_val msm8x16_wcd_reg_defaults[] = {
 static const struct msm8x16_wcd_reg_mask_val msm8x16_wcd_reg_defaults_2_0[] = {
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_DIGITAL_SEC_ACCESS, 0xA5),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_DIGITAL_PERPH_RESET_CTL3, 0x0F),
-	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_TX_1_2_OPAMP_BIAS, 0x4B),
+	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_TX_1_2_OPAMP_BIAS, 0x4F),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_NCP_FBCTRL, 0x28),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_SPKR_DRV_CTL, 0x69),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_SPKR_DRV_DBG, 0x01),
@@ -3550,7 +3525,7 @@ static const struct msm8x16_wcd_reg_mask_val msm8909_wcd_reg_defaults[] = {
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_DIGITAL_PERPH_RESET_CTL3, 0x0F),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_SEC_ACCESS, 0xA5),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_PERPH_RESET_CTL3, 0x0F),
-	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_TX_1_2_OPAMP_BIAS, 0x4B),
+	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_TX_1_2_OPAMP_BIAS, 0x4C),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_NCP_FBCTRL, 0x28),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_SPKR_DRV_CTL, 0x69),
 	MSM8X16_WCD_REG_VAL(MSM8X16_WCD_A_ANALOG_SPKR_DRV_DBG, 0x01),
