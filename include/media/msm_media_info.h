@@ -149,7 +149,7 @@ static inline unsigned int VENUS_EXTRADATA_SIZE(int width, int height)
 	 * In the future, calculate the size based on the w/h but just
 	 * hardcode it for now since 16K satisfies all current usecases.
 	 */
-#ifdef CONFIG_MACH_NUBIA //for nx512j camera, fixes video recording
+#if 1 //for nx512j camera, fixes video recording
 	return 8 * 1024;
 #else
 	return 16 * 1024;
