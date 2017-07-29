@@ -97,9 +97,11 @@ struct msm_vfe_irq_ops {
 	void (*process_reg_update) (struct vfe_device *vfe_dev,
 		uint32_t irq_status0, uint32_t irq_status1,
 		struct msm_isp_timestamp *ts);
+#ifndef CONFIG_LEGACY_IOCTL
 	void (*process_epoch_irq)(struct vfe_device *vfe_dev,
 		uint32_t irq_status0, uint32_t irq_status1,
 		struct msm_isp_timestamp *ts);
+#endif
 	void (*process_reset_irq) (struct vfe_device *vfe_dev,
 		uint32_t irq_status0, uint32_t irq_status1);
 	void (*process_halt_irq) (struct vfe_device *vfe_dev,
@@ -164,7 +166,11 @@ struct msm_vfe_axi_ops {
 };
 
 struct msm_vfe_core_ops {
+#ifdef CONFIG_LEGACY_IOCTL
+	void (*reg_update) (struct vfe_device *vfe_dev);
+#else
 	void (*reg_update) (struct vfe_device *vfe_dev, uint32_t input_src);
+#endif
 	long (*reset_hw) (struct vfe_device *vfe_dev, uint32_t first_start,
 		uint32_t blocking_call);
 	int (*init_hw) (struct vfe_device *vfe_dev);

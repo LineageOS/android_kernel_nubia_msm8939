@@ -398,6 +398,7 @@ static void msm_vfe32_process_halt_irq(struct vfe_device *vfe_dev,
 	}
 }
 
+#ifndef CONFIG_LEGACY_IOCTL
 static void msm_vfe32_process_epoch_irq(struct vfe_device *vfe_dev,
 	uint32_t irq_status0, uint32_t irq_status1,
 	struct msm_isp_timestamp *ts)
@@ -407,6 +408,7 @@ static void msm_vfe32_process_epoch_irq(struct vfe_device *vfe_dev,
 	if (irq_status0 & (1 << 3))
 		msm_isp_notify(vfe_dev, ISP_EVENT_SOF, VFE_PIX_0, ts);
 }
+#endif
 
 static void msm_vfe32_process_camif_irq(struct vfe_device *vfe_dev,
 	uint32_t irq_status0, uint32_t irq_status1,
@@ -420,7 +422,11 @@ static void msm_vfe32_process_camif_irq(struct vfe_device *vfe_dev,
 		if (vfe_dev->axi_data.src_info[VFE_PIX_0].raw_stream_count > 0
 			&& vfe_dev->axi_data.src_info[VFE_PIX_0].
 			pix_stream_count == 0) {
+#ifdef CONFIG_LEGACY_IOCTL
+			msm_isp_sof_notify(vfe_dev, VFE_PIX_0, ts);
+#else
 			msm_isp_notify(vfe_dev, ISP_EVENT_SOF, VFE_PIX_0, ts);
+#endif
 			if (vfe_dev->axi_data.stream_update)
 				msm_isp_axi_stream_update(vfe_dev,
 					(1 << VFE_PIX_0));
@@ -605,7 +611,51 @@ static void msm_vfe32_read_irq_status(struct vfe_device *vfe_dev,
 		vfe_dev->error_info.violation_status |=
 			msm_camera_io_r(vfe_dev->vfe_base + 0x7B4);
 }
+#ifdef CONFIG_LEGACY_IOCTL
+static void msm_vfe32_process_reg_update(struct vfe_device *vfe_dev,
+	uint32_t irq_status0, uint32_t irq_status1,
+	struct msm_isp_timestamp *ts)
+{
+	uint8_t input_src = 0x0;
+	if (!(irq_status0 & 0x20) && !(irq_status1 & 0x1C000000))
+		return;
 
+	if (irq_status0 & BIT(5)) {
+		msm_isp_sof_notify(vfe_dev, VFE_PIX_0, ts);
+		input_src |= (1 << VFE_PIX_0);
+	}
+	if (irq_status1 & BIT(26)) {
+		msm_isp_sof_notify(vfe_dev, VFE_RAW_0, ts);
+		input_src |= (1 << VFE_RAW_0);
+	}
+	if (irq_status1 & BIT(27)) {
+		msm_isp_sof_notify(vfe_dev, VFE_RAW_1, ts);
+		input_src |= (1 << VFE_RAW_1);
+	}
+	if (irq_status1 & BIT(28)) {
+		msm_isp_sof_notify(vfe_dev, VFE_RAW_2, ts);
+		input_src |= (1 << VFE_RAW_2);
+	}
+
+	if (vfe_dev->axi_data.stream_update)
+		msm_isp_axi_stream_update(vfe_dev, input_src);
+	if (atomic_read(&vfe_dev->stats_data.stats_update))
+		msm_isp_stats_stream_update(vfe_dev);
+	msm_isp_update_framedrop_reg(vfe_dev, input_src);
+	msm_isp_update_error_frame_count(vfe_dev);
+
+	vfe_dev->hw_info->vfe_ops.core_ops.
+		reg_update(vfe_dev);
+	return;
+}
+
+static void msm_vfe32_reg_update(
+	struct vfe_device *vfe_dev)
+{
+	msm_camera_io_w_mb(0xF, vfe_dev->vfe_base + 0x260);
+}
+
+#else
 static void msm_vfe32_process_reg_update(struct vfe_device *vfe_dev,
 	uint32_t irq_status0, uint32_t irq_status1,
 	struct msm_isp_timestamp *ts)
@@ -660,7 +710,7 @@ static void msm_vfe32_reg_update(
 {
 	msm_camera_io_w_mb(input_src, vfe_dev->vfe_base + 0x260);
 }
-
+#endif
 static long msm_vfe32_reset_hardware(struct vfe_device *vfe_dev,
 	uint32_t first_start, uint32_t blocking)
 {
@@ -948,10 +998,18 @@ static void msm_vfe32_update_camif_state(
 
 	if (update_state == ENABLE_CAMIF) {
 		val = msm_camera_io_r(vfe_dev->vfe_base + 0x1C);
+#ifdef CONFIG_LEGACY_IOCTL
+		val |= 0x1;
+		msm_camera_io_w_mb(val, vfe_dev->vfe_base + 0x1C);
+
+		val = msm_camera_io_r(vfe_dev->vfe_base + 0x1E4);
+
+#else
 		val |= 0x19;
 		msm_camera_io_w_mb(val, vfe_dev->vfe_base + 0x1C);
 		msm_camera_io_w_mb(0xA, vfe_dev->vfe_base + 0x200);
 		val = msm_camera_io_r(vfe_dev->vfe_base + 0x1E4);
+#endif
 		bus_en =
 		((vfe_dev->axi_data.src_info[
 			VFE_PIX_0].raw_stream_count > 0) ? 1 : 0);
@@ -1222,10 +1280,16 @@ static int msm_vfe32_axi_restart(struct vfe_device *vfe_dev,
 	/*Clear IRQ Status */
 	msm_camera_io_w(0xFE7FFFFF, vfe_dev->vfe_base + 0x28);
 	msm_camera_io_w_mb(0x1, vfe_dev->vfe_base + 0x1D8);
+#ifndef CONFIG_LEGACY_IOCTL
 	msm_camera_io_w_mb(0xA, vfe_dev->vfe_base + 0x200);
+#endif
 	/* Start AXI */
 	msm_camera_io_w(0x0, vfe_dev->vfe_base + 0x1D8);
+#ifdef CONFIG_LEGACY_IOCTL
+	vfe_dev->hw_info->vfe_ops.core_ops.reg_update(vfe_dev);
+#else
 	vfe_dev->hw_info->vfe_ops.core_ops.reg_update(vfe_dev, 0xF);
+#endif
 	memset(&vfe_dev->error_info, 0, sizeof(vfe_dev->error_info));
 	atomic_set(&vfe_dev->error_info.overflow_state, NO_OVERFLOW);
 	if (enable_camif) {
@@ -1559,7 +1623,9 @@ struct msm_vfe_hardware_info vfe32_hw_info = {
 			.process_reset_irq = msm_vfe32_process_reset_irq,
 			.process_halt_irq = msm_vfe32_process_halt_irq,
 			.process_reg_update = msm_vfe32_process_reg_update,
+#ifndef CONFIG_LEGACY_IOCTL
 			.process_epoch_irq = msm_vfe32_process_epoch_irq,
+#endif
 			.process_axi_irq = msm_isp_process_axi_irq,
 			.process_stats_irq = msm_isp_process_stats_irq,
 		},
